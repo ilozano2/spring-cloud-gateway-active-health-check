@@ -11,8 +11,12 @@
 .mtj.tmp/
 
 # Gradle
+.gradle
 gradlew
 gradlew.bat
+
+# Project
+build
 
 # IDE
 .idea
