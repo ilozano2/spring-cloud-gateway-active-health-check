@@ -11,9 +11,10 @@
 .mtj.tmp/
 
 # Gradle
-.gradle
-gradlew
-gradlew.bat
+*.gradle/
+*gradle/
+*gradlew
+*gradlew.bat
 
 # Project
 build
