@@ -1,0 +1,42 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: service-disc-by-properties
+---
+spring:
+  cloud:
+    gateway:
+      routes:
+        - uri: lb://hello-service # Load Balancer URI handled by ReactiveLoadBalancerClientFilter
+          predicates:
+            - Path=/hello
+    loadbalancer:
+      configurations: health-check # Required for enabling SDC with Health Checks
+    discovery:
+      client:
+        simple: # SimpleDiscoveryClient to configure statically services
+          instances:
+            hello-service:
+            - secure: false
+              port: 8090
+              host: localhost
+              serviceId: hello-service
+              instanceId: hello-service-1
+            - secure: false
+              port: 8091
+              host: localhost
+              serviceId: hello-service
+              instanceId: hello-service-2
+---
+########## [For Testing] ##########
+logging:
+  level:
+    # Log when http://localhost:8090/actuator/health is checked behind the scenes
+    reactor.netty.http.client: DEBUG
+spring:
+  cloud:
+    loadbalancer:
+      health-check:
+        # Don't wait more than 5 seconds to check endpoints
+        interval: 5s
