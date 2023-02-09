@@ -1,0 +1,50 @@
+server:
+  port: 8882
+spring:
+  application:
+    name: 2-custom-service-disc
+---
+spring:
+  cloud:
+    loadbalancer:
+      configurations: health-check # Note: required for enabling SDC with Health Checks - remove this line if you want to reproduce issues because not using HealthChecks in LB
+    gateway:
+      routes:
+        # Route for Active Health Check
+        - id: load-balanced
+          uri: lb://with-filter
+          predicates:
+            - Path=/load-balanced/**
+          filters:
+            - StripPrefix=1
+          #  - LoadBalancer=localhost:8090;localhost:8091;localhost:8092
+            - CircuitBreaker=testCb4,forward:/headers,404,1,5s
+        # Route for Active Health Check with Circuit Breaker
+        - id: load-balanced-with-cb
+          uri: lb://with-filter-and-cb
+          predicates:
+            - Path=/load-balanced-cb/**
+          filters:
+            - StripPrefix=1
+            - CircuitBreaker=lbFallbackTest,forward:/fallback/get,503
+            #- LoadBalancer=localhost:8090;localhost:8091;localhost:8092
+        - uri: http://httpbin.org
+          id: fallback-url
+          predicates:
+            - Path=/fallback/get
+          filters:
+            - StripPrefix=1
+            - RemoveRequestHeader=Host
+---
+########## [For Testing] ##########
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    # Log when http://localhost:8090/actuator/health is checked behind the scenes
+    reactor.netty.http.client: DEBUG
+spring:
+  cloud:
+    loadbalancer:
+      health-check:
+        # Don't wait more than 5 seconds to check endpoints
+        interval: 5s
