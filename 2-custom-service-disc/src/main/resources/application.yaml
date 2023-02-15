@@ -17,24 +17,24 @@ spring:
             - Path=/load-balanced/**
           filters:
             - StripPrefix=1
-          #  - LoadBalancer=localhost:8090;localhost:8091;localhost:8092
-            - CircuitBreaker=testCb4,forward:/headers,404,1,5s
-        # Route for Active Health Check with Circuit Breaker
-        - id: load-balanced-with-cb
-          uri: lb://with-filter-and-cb
+            #- LoadBalancer=httpbin.org:443
+            - LoadBalancer=https://test-tls-server-service:8443
+        - id: load-balanced-2
+          uri: lb://with-filter-2
           predicates:
-            - Path=/load-balanced-cb/**
+            - Path=/load-balanced-2/**
           filters:
             - StripPrefix=1
-            - CircuitBreaker=lbFallbackTest,forward:/fallback/get,503
-            #- LoadBalancer=localhost:8090;localhost:8091;localhost:8092
-        - uri: http://httpbin.org
-          id: fallback-url
-          predicates:
-            - Path=/fallback/get
-          filters:
-            - StripPrefix=1
-            - RemoveRequestHeader=Host
+            #- LoadBalancer=httpbin.org:443
+            - LoadBalancer=test-tls-server-service:8443
+---
+########## [ SSL ]       ##########
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        ssl:
+          trusted-x509-certificates: 'classpath:public.cert'
 ---
 ########## [For Testing] ##########
 logging:

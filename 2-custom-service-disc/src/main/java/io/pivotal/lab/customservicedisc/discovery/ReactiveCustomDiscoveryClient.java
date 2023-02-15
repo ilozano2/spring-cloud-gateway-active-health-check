@@ -24,7 +24,6 @@ public class ReactiveCustomDiscoveryClient implements ReactiveDiscoveryClient {
 		this.loadBalancerProperties = loadBalancerProperties;
 	}
 
-
 	@Override
 	public String description() {
 		return "Custom DC";
@@ -33,7 +32,7 @@ public class ReactiveCustomDiscoveryClient implements ReactiveDiscoveryClient {
 	@Override
 	public Flux<ServiceInstance> getInstances(String serviceId) {
 		return Flux.fromIterable(
-				Optional.ofNullable(instances.get(serviceId)).orElse(Collections.emptyList())
+				instances.getOrDefault(serviceId, Collections.emptyList())
 		);
 	}
 

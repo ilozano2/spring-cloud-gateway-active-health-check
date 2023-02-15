@@ -6,15 +6,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import reactor.core.publisher.Mono;
-
 import org.springframework.cloud.client.DefaultServiceInstance;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.cloud.gateway.route.Route;
-import org.springframework.cloud.gateway.route.RouteDefinition;
-import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
-import org.springframework.cloud.gateway.support.HasRouteId;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import io.pivotal.lab.customservicedisc.discovery.ReactiveCustomDiscoveryClient;
@@ -25,12 +20,10 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 public class LoadBalancerGatewayFilterFactory extends AbstractGatewayFilterFactory<LoadBalancerGatewayFilterFactory.MyConfiguration> {
 
 	private final ReactiveCustomDiscoveryClient discoveryClient;
-	private final RouteDefinitionLocator routeDefinitionLocator;
 
-	public LoadBalancerGatewayFilterFactory(ReactiveCustomDiscoveryClient discoveryClient, RouteDefinitionLocator routeDefinitionLocator) {
+	public LoadBalancerGatewayFilterFactory(ReactiveCustomDiscoveryClient discoveryClient) {
 		super(MyConfiguration.class);
 		this.discoveryClient = discoveryClient;
-		this.routeDefinitionLocator = routeDefinitionLocator;
 	}
 
 	@Override
@@ -69,9 +62,14 @@ public class LoadBalancerGatewayFilterFactory extends AbstractGatewayFilterFacto
 		public List<DefaultServiceInstance> getServiceInstances(String serviceName) {
 			AtomicInteger counter = new AtomicInteger();
 			return Arrays.stream(instances.split(";"))
-					.map(uri -> uri.split(":"))
-					.map(uriAndPort -> new DefaultServiceInstance(serviceName + "-" + counter.incrementAndGet(), serviceName, uriAndPort[0], Integer.valueOf(uriAndPort[1]), false))
-					.collect(Collectors.toList());
+					.map(URI::create)
+					.map(uri -> new DefaultServiceInstance(
+							serviceName + "-" + counter.incrementAndGet(),
+							serviceName,
+							uri.getHost(),
+							uri.getPort(),
+							uri.getScheme().equalsIgnoreCase("https"))
+					).collect(Collectors.toList());
 		}
 	}
 }
