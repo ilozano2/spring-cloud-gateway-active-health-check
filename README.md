@@ -56,11 +56,13 @@ All the endpoints will be checked periodically using the Spring Boot Actuator he
 
 For more options, check https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java and https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java
 
+Note: There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. 
+This post describes the opposite, so we are declaring routes that will be load balanced including active health check.
+
 ## Static approach
 
-TODO
-
-As previously mentioned, you can activate client load balancing.
+You can activate client load balancing statically configuring the property `spring.cloud.discovery.client.simple.instances`.
+It is a map whose key is the service name (used by the lb://<service-name> URI) and the value is an array of `org.springframework.cloud.client.ServiceInstance` objects that will point to the upstream services.
 
 Some of the benefits of static load balancing are
 * Load balancing could distribute traffic between multiple instances, sharing any stress of the services and reducing the probability of crashing
@@ -70,39 +72,42 @@ The problem is that you are setting statically the upstream services in your con
 
 Example:
 ```yaml
-    spring:
-      application:
-        name: service-disc-by-properties
-      cloud:
-        gateway:
-          routes:
-            - uri: lb://hello-service # Note: Load Balancer URI handled by ReactiveLoadBalancerClientFilter
-              predicates:
-                - Path=/headers
-              filters:
-                - StripPrefix=0
-        loadbalancer:
-          configurations: health-check # Note: required for enabling SDC with Health Checks
-        discovery:
-          client:
-            simple: # Note: SimpleDiscoveryClient to configure statically upstream service endpoints
-              instances:
-                hello-service:
-                - secure: false
-                  port: 8090
-                  host: localhost
-                  serviceId: hello-service
-                  instanceId: hello-service-1
-                - secure: false
-                  port: 8091
-                  host: localhost
-                  serviceId: hello-service
-                  instanceId: hello-service-2
+spring:
+  cloud:
+    gateway:
+      routes:
+        - uri: lb://hello-service # Load Balancer URI handled by ReactiveLoadBalancerClientFilter
+          predicates:
+            - Path=/hello
+    loadbalancer:
+      configurations: health-check # Required for enabling SDC with Health Checks
+    discovery:
+      client:
+        simple: # SimpleDiscoveryClient to configure statically services
+          instances:
+            hello-service:
+              - secure: false
+                port: 8090
+                host: localhost
+                serviceId: hello-service
+                instanceId: hello-service-1
+              - secure: false
+                port: 8091
+                host: localhost
+                serviceId: hello-service
+                instanceId: hello-service-2
 ```
 
 ### Trying out
 
-TODO
+TODO GIF?
+
+0. Check http://localhost:8090/actuator/status is "UP"
+1. Test http://localhost:8080/headers responds 200 OK
+2. Turn upstream service down sending PUT request to http://localhost:8090/status/false
+3. Check http://localhost:8090/actuator/status is "DOWN"
+4. Test http://localhost:8080/headers responds 503 Service Unavailable
+   1. Service will respond 200 OK during interval of time before Spring checks the status of the service. The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
 
 ## Eureka integration (+complex, dynamic)
 
@@ -198,7 +203,8 @@ public class LoadBalancerGatewayFilterFactory extends AbstractGatewayFilterFacto
 
 As you can see, if a route matches the pattern `lb://<service-host>`  the `LoadBalancerGatewayFilterFactory` will associate all the upstream service endpoints coming from the filter configuration to the `service-host`.
 
-Under the hood, a new  `ReactiveCustomDiscoveryClient` discovery client implementation has been included in order to manage upstream service endpoints in our code. Spring detects such bean and it will prioritize it in the list of [DiscoveryClient](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/discovery/DiscoveryClient.java) used to determine available endpoints.
+Under the hood, a new  `ReactiveCustomDiscoveryClient` discovery client implementation has been included in order to manage upstream service endpoints in our code. 
+Spring detects such bean, and, it will prioritize it in the list of [DiscoveryClient](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/discovery/DiscoveryClient.java) used to determine available endpoints.
 
 ### Trying out
 
