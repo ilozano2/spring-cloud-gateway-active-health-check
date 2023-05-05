@@ -61,7 +61,7 @@ You can also customize some options like `spring.cloud.loadbalancer.health-check
 
 > Note: Default Health Check configuration will check the upstream service endpoints using the `/actuator/health` endpoint by default, which requires activating Spring Actuator in your upstream service.
 
-For more options, explore the [LoadBalancerClientsProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java and https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java) class
+For more options, explore the [LoadBalancerClientsProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java) and [LoadBalancerProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java) class
 
 Note: There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. 
 This post describes the opposite, so we are declaring routes that will be load balanced including active health check.
