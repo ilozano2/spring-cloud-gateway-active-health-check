@@ -11,9 +11,13 @@ Goal: Routes will forward the request to the upstream services that are healthy 
 
 ![Active Health Check Diagram](active-hc-diagram.png)
 
-TODO - Summarise different ways to add AHC using Spring Cloud Gateway
+This post is divided in two
+1. "Spring features you need" - describing how you can benefit from Spring in order to get Active Health Check
+2. "Registering endpoints for your services" - visiting some approaches for adding one or more endpoints to your routes
 
-There are a couple of features in Spring Commons that can help you to achieve this goal
+# 1. Spring features you need
+
+There are three features in Spring that can help you to get Active Health Check
 
 **Spring Cloud Load Balancer** (SLB) is a client-side load-balancer that allows to balance traffic along different upstream service endpoints. It is part of [Spring Cloud project](https://spring.io/projects/spring-cloud) and it is included in the spring-cloud-commons library ([SLB documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#spring-cloud-loadbalancer)).
 
@@ -23,7 +27,7 @@ There are a couple of features in Spring Commons that can help you to achieve th
 
 In this post, you can see different approaches to get the benefit of this global filter included out of the box. But first, let’s explore some of those features.
 
-### Load Balancer filter
+### Spring Cloud Load Balancer filter
 
 A global filter for load balancing is included in Spring Cloud and can be activated using a special URI notation: "lb://your-service-name".
 
@@ -37,12 +41,14 @@ spring:
          predicates:
          - Path=/service/**
 ```
-The load balancer filter, [ReactiveLoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#reactive-loadbalancer-client-filter) (for reactive applications), will detect the URI and it will replace it by an available endpoint associated to "your-service-name".
+The load balancer filter, [ReactiveLoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#reactive-loadbalancer-client-filter) (for reactive applications), will detect the URI, and it will replace it by an **available** endpoint associated to "your-service-name".
+
+Take into account that you need to register "your-service-name" into the Service Discovery registry. We will see different ways you can do it in the following sections. 
 
 ### Active Health Check
 
 By default, traffic can be routed to all the upstream services,  even if they are unhealthy.
-To prevent picking a bad one, you can enable the `health-check` configuration.
+To prevent picking a bad one, you can enable the `health-check` configuration provided by the Load Balancer Client from Spring Cloud
 
 ```yaml
     spring:
@@ -50,21 +56,27 @@ To prevent picking a bad one, you can enable the `health-check` configuration.
         loadbalancer:  
           configurations: health-check
 ```
-All the endpoints will be checked periodically using the Spring Boot Actuator health endpoint automatically. You can also customize some options like `spring.cloud.loadbalancer.health-check.<your-service-name>.path` and `spring.cloud.loadbalancer.health-check.interval`.
+All the endpoints will be checked periodically using the Spring Boot Actuator health endpoint automatically.
+You can also customize some options like `spring.cloud.loadbalancer.health-check.<your-service-name>.path` and `spring.cloud.loadbalancer.health-check.interval`.
 
 > Note: Default Health Check configuration will check the upstream service endpoints using the `/actuator/health` endpoint by default, which requires activating Spring Actuator in your upstream service.
 
-For more options, check https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java and https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java
+For more options, explore the [LoadBalancerClientsProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java and https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java) class
 
 Note: There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. 
 This post describes the opposite, so we are declaring routes that will be load balanced including active health check.
+
+# 2. Registering endpoints for your services
+
+In the previous section, you have specified a Load Balanced URI (lb://your-service-name), but now you need to register the endpoints associated with the service name of the URI.
+We are visiting some approaches in the following sections.
 
 ## Static approach
 
 You can activate client load balancing statically configuring the property `spring.cloud.discovery.client.simple.instances`.
 It is a map whose key is the service name (used by the lb://<service-name> URI) and the value is an array of `org.springframework.cloud.client.ServiceInstance` objects that will point to the upstream services.
 
-Some of the benefits of static load balancing are
+Some benefits of static load balancing are
 * Load balancing could distribute traffic between multiple instances, sharing any stress of the services and reducing the probability of crashing
 * Fault tolerance
 
@@ -150,9 +162,7 @@ The counterpart is that you require a new component in your architecture increas
 TODO
 
 
-## Custom Filter at Route level (dynamic)
-
-TODO
+## Custom Filter at Route level (dynamic approach)
 
 As you know, Spring Cloud Gateway brings the option for creating your own custom filters.
 Also, applying filters and changing routes without restarting your gateway is possible.
@@ -218,6 +228,12 @@ TODO Service URLs
 
 In this post you have seen multiple ways to get load balancing and active health checks in your projects.
 
-From the static approach for basic projects or proof of concepts where the number of upstream services doesn’t change. And a more dynamic approach, using Eureka or Spring Cloud Gateway filters.
+From the static approach for basic projects or proof of concepts where the number of upstream services doesn’t change. 
+And a more dynamic approach, using Eureka or Spring Cloud Gateway filters.
 
 To sum up, you have also seen that Spring Cloud Gateway approach is a great option if you don’t need to add an extra component to your architecture.
+
+# Additional Resources
+
+Want to learn more about Spring Cloud? Join us virtually at [Spring Academy](https://spring.academy)!
+Want to get **Active Health Check** just by adding a property in your route without getting your hands dirty? Take a look at our commercial platform with Kubernetes support.
