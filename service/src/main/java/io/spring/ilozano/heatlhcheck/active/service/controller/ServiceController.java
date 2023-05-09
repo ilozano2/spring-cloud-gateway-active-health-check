@@ -6,6 +6,7 @@ import java.util.Map;
 import io.spring.ilozano.heatlhcheck.active.service.indicator.SwitchHealhCheckIndicator;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,12 +27,15 @@ public class ServiceController {
 	@Autowired
 	private DiscoveryClient discoveryClient;
 
+	@Value("${server.port}")
+	Integer port;
+
 	/**
 	 * Hello world endpoint.
 	 */
 	@GetMapping("/hello")
 	public String headers() {
-		return "{ \"message\": \"hello world!\"}";
+		return "{ \"message\": \"hello world from port %s!\"}".formatted(port);
 	}
 
 	/**

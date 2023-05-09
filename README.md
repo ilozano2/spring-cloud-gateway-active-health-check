@@ -112,14 +112,82 @@ spring:
 
 ### Trying out
 
-TODO GIF?
+1. Run servers
+```shell
+# Run server 1
+SERVER_PORT=8090 ./gradlew :service:bootRun
+```
+```shell
+# Run server 2
+SERVER_PORT=8091 ./gradlew :service:bootRun
+```
 
-0. Check http://localhost:8090/actuator/status is "UP"
-1. Test http://localhost:8080/headers responds 200 OK
-2. Turn upstream service down sending PUT request to http://localhost:8090/status/false
-3. Check http://localhost:8090/actuator/status is "DOWN"
-4. Test http://localhost:8080/headers responds 503 Service Unavailable
-   1. Service will respond 200 OK during interval of time before Spring checks the status of the service. The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
+2. Check http://localhost:8090/actuator/health is "UP"
+
+```shell
+curl http://localhost:8090/actuator/health
+```
+> {"status":"UP"}
+
+3. Test http://localhost:8080/hello responds 200 OK
+
+```shell
+curl localhost:8090/hello
+```
+> { "message": "hello world!"}%
+
+4. Test Spring Cloud Gateway balancer
+
+```shell
+curl localhost:8881/hello
+```
+> { "message": "hello world from port 8090!"}%
+```shell
+curl localhost:8881/hello
+```
+> { "message": "hello world from port 8090!"}%
+
+You could need to run multiple times the previous commands to get a response from a different server.
+
+5. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
+
+```shell
+curl localhost:8090/status/false -X PUT
+```
+
+6. Check http://localhost:8090/actuator/status is "DOWN"
+
+```shell
+curl http://localhost:8090/actuator/health
+```
+> {"status":"DOWN"}
+
+7. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
+
+You could receive one respond on port 8090 owing the healthcheck haven't checked the endpoint when you send the request.
+The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
+
+Also, you can see some messages that describes one of the upstream endpoints is not healthy, and therefore, it is unavailable.
+> 2023-05-08 14:59:53.151 DEBUG 9906 --- [ctor-http-nio-3] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
+> HTTP/1.1 503 Service Unavailable
+
+```shell
+curl localhost:8881/hello
+```
+> { "message": "hello world from port 8091!"}%
+
+8. Mark server 2 as unhealthy sending PUT request to http://localhost:8091/status/false
+
+```shell
+curl localhost:8091/status/false -X PUT
+```
+
+9. Run some GET requests to http://localhost:8881/hello and see that it responds "503 Service Unavailable"
+
+```shell
+curl localhost:8881/hello
+```
+> {"timestamp":"2023-05-08T13:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
 
 ## Eureka integration (+complex, dynamic)
 
@@ -159,7 +227,23 @@ The counterpart is that you require a new component in your architecture increas
 
 ### Trying out
 
-TODO
+1. Run Eureka Server
+```shell
+./gradlew :eureka-server:bootRun
+```
+
+2. Run servers including `eureka` profile
+```shell
+# Run server 1
+SERVER_PORT=8090 ./gradlew :service:bootRun -Dspring.profiles.active=eureka
+```
+```shell
+# Run server 2
+SERVER_PORT=8091 ./gradlew :service:bootRun -Dspring.profiles.active=eureka
+```
+
+3. Go to http://localhost:8761/ and check the servers are included  as instance of `hello-service`
+
 
 
 ## Custom Filter at Route level (dynamic approach)
