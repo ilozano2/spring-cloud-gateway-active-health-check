@@ -136,7 +136,13 @@ curl localhost:8090/hello
 ```
 > { "message": "hello world!"}%
 
-4. Test Spring Cloud Gateway balancer
+4. Run Spring Cloud Gateway
+
+```shell
+./gradlew :1-service-disc-by-properties:bootRun
+```
+
+5. Test Spring Cloud Gateway balancer
 
 ```shell
 curl localhost:8881/hello
@@ -145,24 +151,24 @@ curl localhost:8881/hello
 ```shell
 curl localhost:8881/hello
 ```
-> { "message": "hello world from port 8090!"}%
+> { "message": "hello world from port 8091!"}%
 
 You could need to run multiple times the previous commands to get a response from a different server.
 
-5. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
+6. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
 
 ```shell
 curl localhost:8090/status/false -X PUT
 ```
 
-6. Check http://localhost:8090/actuator/status is "DOWN"
+7. Check http://localhost:8090/actuator/status is "DOWN"
 
 ```shell
 curl http://localhost:8090/actuator/health
 ```
 > {"status":"DOWN"}
 
-7. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
+8. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
 
 You could receive one respond on port 8090 owing the healthcheck haven't checked the endpoint when you send the request.
 The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
@@ -176,13 +182,13 @@ curl localhost:8881/hello
 ```
 > { "message": "hello world from port 8091!"}%
 
-8. Mark server 2 as unhealthy sending PUT request to http://localhost:8091/status/false
+9. Mark server 2 as unhealthy sending PUT request to http://localhost:8091/status/false
 
 ```shell
 curl localhost:8091/status/false -X PUT
 ```
 
-9. Run some GET requests to http://localhost:8881/hello and see that it responds "503 Service Unavailable"
+10. Run some GET requests to http://localhost:8881/hello and see that it responds "503 Service Unavailable"
 
 ```shell
 curl localhost:8881/hello
@@ -235,16 +241,40 @@ The counterpart is that you require a new component in your architecture increas
 2. Run servers including `eureka` profile
 ```shell
 # Run server 1
-SERVER_PORT=8090 ./gradlew :service:bootRun -Dspring.profiles.active=eureka
+SPRING_PROFILES_ACTIVE=eureka SERVER_PORT=8090 ./gradlew :service:bootRun
 ```
 ```shell
 # Run server 2
-SERVER_PORT=8091 ./gradlew :service:bootRun -Dspring.profiles.active=eureka
+SPRING_PROFILES_ACTIVE=eureka SERVER_PORT=8091 ./gradlew :service:bootRun
 ```
 
-3. Go to http://localhost:8761/ and check the servers are included  as instance of `hello-service`
+3. Go to http://localhost:8761/ and check the servers are included  as instance of the application `hello-service`
 
+4. Test Spring Cloud Gateway balancer
 
+```shell
+curl localhost:8881/hello
+```
+> { "message": "hello world from port 8090!"}%
+```shell
+curl localhost:8881/hello
+```
+> { "message": "hello world from port 8091!"}%
+
+5. Run Spring Cloud Gateway
+
+```shell
+./gradlew :3-eureka-service-disc:bootRun
+```
+
+6. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
+
+```shell
+curl localhost:8090/status/false -X PUT
+```
+
+You should see in the Eureka dashboard that there is only one instance available, and, you will see some logs messages complaining that service on port 8090 is not available.
+The health check is not immediate, so you could need to wait a few seconds to see the instance marked as DOWN.
 
 ## Custom Filter at Route level (dynamic approach)
 
@@ -302,11 +332,89 @@ Spring detects such bean, and, it will prioritize it in the list of [DiscoveryCl
 
 ### Trying out
 
-TODO Running the example, show output
-TODO Service URLs
-* GET localhost:8090/actuator/health
-* GET localhost:8090/hello
-* PUT localhost:8090/status/{true|false}
+1. Run servers
+```shell
+# Run server 1
+SERVER_PORT=8090 ./gradlew :service:bootRun
+```
+```shell
+# Run server 2
+SERVER_PORT=8091 ./gradlew :service:bootRun
+```
+
+2. Check http://localhost:8090/actuator/health is "UP"
+
+```shell
+curl http://localhost:8090/actuator/health
+```
+> {"status":"UP"}
+
+3. Test http://localhost:8080/hello responds 200 OK
+
+```shell
+curl localhost:8090/hello
+```
+> { "message": "hello world!"}%
+
+4. Run Spring Cloud Gateway
+
+```shell
+./gradlew :2-custom-service-disc:bootRun
+```
+
+5. Test Spring Cloud Gateway balancer
+
+```shell
+curl localhost:8882/hello
+```
+> { "message": "hello world from port 8090!"}%
+```shell
+curl localhost:8882/hello
+```
+> { "message": "hello world from port 8091!"}%
+
+You could need to run multiple times the previous commands to get a response from a different server.
+
+6. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
+
+```shell
+curl localhost:8090/status/false -X PUT
+```
+
+7. Check http://localhost:8090/actuator/status is "DOWN"
+
+```shell
+curl http://localhost:8090/actuator/health
+```
+> {"status":"DOWN"}
+
+8. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
+
+You could receive one respond on port 8090 owing the healthcheck haven't checked the endpoint when you send the request.
+The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
+
+Also, you can see some messages that describes one of the upstream endpoints is not healthy, and therefore, it is unavailable.
+> 2023-05-08 15:59:53.151 DEBUG 9906 --- [ctor-http-nio-2] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
+> HTTP/1.1 503 Service Unavailable
+
+```shell
+curl localhost:8882/hello
+```
+> { "message": "hello world from port 8091!"}%
+
+9. Mark server 2 as unhealthy sending PUT request to http://localhost:8091/status/false
+
+```shell
+curl localhost:8091/status/false -X PUT
+```
+
+10. Run some GET requests to http://localhost:8881/hello and see that it responds "503 Service Unavailable"
+
+```shell
+curl localhost:8882/hello
+```
+> {"timestamp":"2023-05-08T14:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
+
 
 ### Next steps
 
