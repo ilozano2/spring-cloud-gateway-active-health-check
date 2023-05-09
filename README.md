@@ -3,7 +3,7 @@
 Nowadays, services are compounded by other upstream services. This accelerates development and allows modules to be focused on specific responsibilities increasing their quality. This is one of the main things the microservices approach tries to solve.
 However, jumping from one service to another could add extra latency, and this latency could be dramatically higher when the services are not responding.
 
-If you are running microservices, you want to prevent your upstream services from being called when they are not working properly, even if they are using a circuit breaker pattern. It will also generate a penalty in the time response. For this reason, it is important to actively check your services in order to always call responding upstream services.
+If you are running microservices, you want to prevent your upstream services from being called when they are not working properly, even if they are using a circuit breaker pattern. It will also generate a penalty in the time response. For this reason, it is important to actively check your services to always call responding upstream services.
 
 Last but not least, the features can be combined with a Circuit Breaker library to immediately fall back on an alternative endpoint without suffering the first miss penalty.
 
@@ -11,15 +11,15 @@ Goal: Routes will forward the request to the upstream services that are healthy 
 
 ![Active Health Check Diagram](active-hc-diagram.png)
 
-This post is divided in two
-1. "Spring features you need" - describing how you can benefit from Spring in order to get Active Health Check
+This post is divided into two
+1. "Spring features you need" - describing how you can benefit from Spring to get Active Health Check
 2. "Registering endpoints for your services" - visiting some approaches for adding one or more endpoints to your routes
 
 # 1. Spring features you need
 
-There are three features in Spring that can help you to get Active Health Check
+Three features in Spring can help you to get Active Health Check
 
-**Spring Cloud Load Balancer** (SLB) is a client-side load-balancer that allows to balance traffic along different upstream service endpoints. It is part of [Spring Cloud project](https://spring.io/projects/spring-cloud) and it is included in the spring-cloud-commons library ([SLB documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#spring-cloud-loadbalancer)).
+**Spring Cloud Load Balancer** (SLB) is a client-side load-balancer that allows balancing traffic along different upstream service endpoints. It is part of [Spring Cloud project](https://spring.io/projects/spring-cloud) and it is included in the spring-cloud-commons library ([SLB documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#spring-cloud-loadbalancer)).
 
 **Client-side service discovery** feature allows the client to find and communicate with services without hard-coding the hostname and port. It is also included in the spring-cloud-commons library ([SSD documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#discovery-client)).
 
@@ -41,7 +41,7 @@ spring:
          predicates:
          - Path=/service/**
 ```
-The load balancer filter, [ReactiveLoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#reactive-loadbalancer-client-filter) (for reactive applications), will detect the URI, and it will replace it by an **available** endpoint associated to "your-service-name".
+The load balancer filter, [ReactiveLoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#reactive-loadbalancer-client-filter) (for reactive applications), will detect the URI, and it will replace it by an **available** endpoint associated with "your-service-name".
 
 Take into account that you need to register "your-service-name" into the Service Discovery registry. We will see different ways you can do it in the following sections. 
 
@@ -68,12 +68,12 @@ This post describes the opposite, so we are declaring routes that will be load b
 
 # 2. Registering endpoints for your services
 
-In the previous section, you have specified a Load Balanced URI (lb://your-service-name), but now you need to register the endpoints associated with the service name of the URI.
+In the previous section, you specified a Load Balanced URI (lb://your-service-name), but now you need to register the endpoints associated with the service name of the URI.
 We are visiting some approaches in the following sections.
 
 ## Static approach
 
-You can activate client load balancing statically configuring the property `spring.cloud.discovery.client.simple.instances`.
+You can activate client load balancing statically by configuring the property `spring.cloud.discovery.client.simple.instances`.
 It is a map whose key is the service name (used by the lb://<service-name> URI) and the value is an array of `org.springframework.cloud.client.ServiceInstance` objects that will point to the upstream services.
 
 Some benefits of static load balancing are
@@ -168,12 +168,12 @@ curl http://localhost:8090/actuator/health
 ```
 > {"status":"DOWN"}
 
-8. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
+8. Run multiple times a GET request to http://localhost:8881/hello and see that you only get response from port 8091
 
-You could receive one respond on port 8090 owing the healthcheck haven't checked the endpoint when you send the request.
+You could receive one response on port 8090 owing the healthcheck haven't checked the endpoint when you send the request.
 The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
 
-Also, you can see some messages that describes one of the upstream endpoints is not healthy, and therefore, it is unavailable.
+Also, you can see some messages that describe one of the upstream endpoints as not healthy, and therefore, it is unavailable.
 > 2023-05-08 14:59:53.151 DEBUG 9906 --- [ctor-http-nio-3] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
 > HTTP/1.1 503 Service Unavailable
 
@@ -197,7 +197,7 @@ curl localhost:8881/hello
 
 ## Eureka integration (+complex, dynamic)
 
-Having a static configuration is not so flexible, and Eureka as service discovery server removes that drawback.
+Having a static configuration is not so flexible, and Eureka as a service discovery server removes that drawback.
 
 The counterpart is that you require a new component in your architecture increasing maintenance. This could be not an option for some clients.
 
@@ -327,7 +327,7 @@ public class LoadBalancerGatewayFilterFactory extends AbstractGatewayFilterFacto
 
 As you can see, if a route matches the pattern `lb://<service-host>`  the `LoadBalancerGatewayFilterFactory` will associate all the upstream service endpoints coming from the filter configuration to the `service-host`.
 
-Under the hood, a new  `ReactiveCustomDiscoveryClient` discovery client implementation has been included in order to manage upstream service endpoints in our code. 
+Under the hood, a new  `ReactiveCustomDiscoveryClient` discovery client implementation has been included to manage upstream service endpoints in our code. 
 Spring detects such bean, and, it will prioritize it in the list of [DiscoveryClient](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/discovery/DiscoveryClient.java) used to determine available endpoints.
 
 ### Trying out
@@ -390,10 +390,10 @@ curl http://localhost:8090/actuator/health
 
 8. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
 
-You could receive one respond on port 8090 owing the healthcheck haven't checked the endpoint when you send the request.
+You could receive one response on port 8090 owing to the healthcheck haven't checked the endpoint when you send the request.
 The interval can be modified in the property `spring.cloud.loadbalancer.health-check.interval`
 
-Also, you can see some messages that describes one of the upstream endpoints is not healthy, and therefore, it is unavailable.
+Also, you can see some messages that describe one of the upstream endpoints as not healthy, and therefore, it is unavailable.
 > 2023-05-08 15:59:53.151 DEBUG 9906 --- [ctor-http-nio-2] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
 > HTTP/1.1 503 Service Unavailable
 
@@ -418,7 +418,7 @@ curl localhost:8882/hello
 
 ### Next steps
 
-In this post you have seen multiple ways to get load balancing and active health checks in your projects.
+In this post, you have seen multiple ways to get load balancing and active health checks in your projects.
 
 From the static approach for basic projects or proof of concepts where the number of upstream services doesn’t change. 
 And a more dynamic approach, using Eureka or Spring Cloud Gateway filters.
