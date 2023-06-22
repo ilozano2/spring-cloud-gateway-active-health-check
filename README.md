@@ -428,4 +428,4 @@ To sum up, you have also seen that Spring Cloud Gateway approach is a great opti
 # Additional Resources
 
 Want to learn more about Spring Cloud? Join us virtually at [Spring Academy](https://spring.academy)!
-Want to get **Active Health Check** just by adding a property in your route without getting your hands dirty? Take a look at our commercial platform with Kubernetes support.
+Want to get **Active Health Check** just by adding a property in your route without getting your hands dirty? Take a look at our [commercial platform with Kubernetes support](https://docs.vmware.com/en/VMware-Spring-Cloud-Gateway-for-Kubernetes/index.html).
