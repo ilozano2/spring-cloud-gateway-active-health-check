@@ -194,6 +194,8 @@ curl localhost:8881/hello
 ```
 > {"timestamp":"2023-05-08T13:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
 
+11. Stop all the servers started in the previous steps
+
 ## Eureka integration (+complex, dynamic)
 
 Having a static configuration is not very flexible, but using Eureka as a service discovery can remove that drawback.
@@ -239,6 +241,10 @@ The following example configures Eureka integration:
 ./gradlew :eureka-server:bootRun
 ```
 
+Wait until you can see Eureka server was started up
+
+> 2023-06-26 12:51:46.901  INFO 88601 --- [       Thread-9] e.s.EurekaServerInitializerConfiguration : Started Eureka Server
+
 2. Run servers including `eureka` profile
 ```shell
 # Run server 1
@@ -249,24 +255,29 @@ SPRING_PROFILES_ACTIVE=eureka SERVER_PORT=8090 ./gradlew :service:bootRun
 SPRING_PROFILES_ACTIVE=eureka SERVER_PORT=8091 ./gradlew :service:bootRun
 ```
 
+You should see that the sever instances were added into Eureka in the servers' logs from step 1.
+
+> 2023-06-26 12:52:50.805  INFO 88601 --- [nio-8761-exec-3] c.n.e.registry.AbstractInstanceRegistry  : Registered instance HELLO-SERVICE/192.168.0.14:hello-service:8090 with status UP (replication=true)
+> 2023-06-26 12:53:29.127  INFO 88601 --- [nio-8761-exec-9] c.n.e.registry.AbstractInstanceRegistry  : Registered instance HELLO-SERVICE/192.168.0.14:hello-service:8091 with status UP (replication=true)
+
 3. Go to http://localhost:8761/ and check the servers are included  as instance of the application `hello-service`
 
-4. Test Spring Cloud Gateway balancer
+4. Run Spring Cloud Gateway
 
 ```shell
-curl localhost:8881/hello
+SERVER_PORT=8883 ./gradlew :3-eureka-service-disc:bootRun
+```
+
+5.Test Spring Cloud Gateway balancer
+
+```shell
+curl localhost:8883/hello
 ```
 > { "message": "hello world from port 8090!"}%
 ```shell
-curl localhost:8881/hello
+curl localhost:8883/hello
 ```
 > { "message": "hello world from port 8091!"}%
-
-5. Run Spring Cloud Gateway
-
-```shell
-./gradlew :3-eureka-service-disc:bootRun
-```
 
 6. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
 
@@ -276,6 +287,8 @@ curl localhost:8090/status/false -X PUT
 
 You should see in the Eureka dashboard that there is only one instance available, and you will see some logs messages complaining that service on port `8090` is not available.
 The health check is not immediate, so you might need to wait a few seconds to see the instance marked as DOWN.
+
+7. Stop all the servers started in the previous steps
 
 ## Custom Filter at Route level (dynamic approach)
 
@@ -360,7 +373,7 @@ curl localhost:8090/hello
 4. Run Spring Cloud Gateway
 
 ```shell
-./gradlew :2-custom-service-disc:bootRun
+SERVER_PORT=8882 ./gradlew :2-custom-service-disc:bootRun
 ```
 
 5. Test Spring Cloud Gateway balancer
@@ -417,6 +430,7 @@ curl localhost:8882/hello
 ```
 > {"timestamp":"2023-05-08T14:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
 
+11. Stop all the servers started in the previous steps
 
 ### Next steps
 
