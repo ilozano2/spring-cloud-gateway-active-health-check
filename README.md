@@ -1,32 +1,30 @@
 # Active Health Check strategies with Spring Cloud Gateway
 
-Nowadays, services are compounded by other upstream services. This accelerates development and allows modules to be focused on specific responsibilities, increasing their quality.
-This is one of the main things the microservices approach tries to solve. However, jumping from one service to another could add extra latency, and this latency could be dramatically higher when the services are not responding.
+Nowadays, services are compounded by other upstream services. This accelerates development and allows modules to be focused on specific responsibilities, increasing their quality. This is one of the main advantages of using a microservice approach. However, jumping from one service to another can add extra latency, and this latency can be dramatically higher when the services are not responding.
 
-If you run microservices, you want to prevent your upstream services from being called when they do not work properly, even if they are using a circuit breaker pattern. It will also generate a penalty in the time response. For this reason, it is important to actively check your services to always call responding upstream services.
+If you run microservices, you want to prevent your upstream services from being called when they are not working properly, even if they are using a circuit breaker pattern. It can also generate a penalty in the response time. For this reason, it is important to actively check your upstream services to verify they are responding.
 
-Last but not least, the features can be combined with a circuit breaker library to immediately fall back on an alternative endpoint without suffering the first miss penalty.
+Last but not least, these features can be combined with a circuit breaker library to immediately fall back on an alternative endpoint without suffering the first miss penalty.
 
-The goal is for routes to forward the request to the upstream services that are healthy by using a load balancer strategy:
+The goal is for routes to forward the requests to upstream services that are healthy by using a load balancer strategy:
 
 ![Active Health Check Diagram](active-hc-diagram.png)
 
 This post is divided into two parts:
-1. "Spring features you need" - describing how you can benefit from the Spring Active Health Check feature.
+1. "Spring features you need" - describing which Spring’s features you need to get Active Health Check.
 2. "Registering endpoints for your services" - visiting some approaches for adding one or more endpoints to your routes.
 
 # 1. Spring features you need
 
-Three features in Spring can help you to get Active Health Check
+There are some features in Spring that can help you to get Active Health Check
 
-**Spring Cloud Load Balancer** (SLB) is a client-side load-balancer that allows balancing traffic along different upstream service endpoints.
-It is part of [Spring Cloud project](https://spring.io/projects/spring-cloud), and it is included in the spring-cloud-commons library (see the [SLB documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#spring-cloud-loadbalancer)).
+* **Spring Cloud Load Balancer** (SLB) is a client-side load-balancer that allows balancing traffic between different upstream service endpoints. It is part of [Spring Cloud project](https://spring.io/projects/spring-cloud), and is included in the spring-cloud-commons library (see the [SLB documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#spring-cloud-loadbalancer)).
+* The client-side service discovery feature lets the client find and communicate with services without hard-coding the hostname and port. It is also included in the spring-cloud-commons library (see the [Service Discovery documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#discovery-client)).
 
-The **client-side service discovery** feature lets the client find and communicate with services without hard-coding the hostname and port. It is also included in the spring-cloud-commons library ([Service Discovery documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#discovery-client)).
+**Spring Cloud Gateway** supports the above features through the [LoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#_loadbalancerclient_filter)/[ReactiveLoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#reactive-loadbalancer-client-filter) global filters.
+In this post, you can see different ways to use one of those global filters.
 
-**Spring Cloud Gateway** supports both features and can be configured with [LoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#_loadbalancerclient_filter)/[ReactiveLoadBalancerClientFilter](https://cloud.spring.io/spring-cloud-gateway/2.1.x/multi/multi__global_filters.html#reactive-loadbalancer-client-filter).
-
-In this post, you can see different ways to use this global filter. First, though, let’s explore some of those features.
+First, though, let’s explore some of those features.
 
 ### Spring Cloud Load Balancer filter
 
@@ -49,8 +47,8 @@ Take into account that you need to register "your-service-name" in the Service D
 
 ### Active Health Check
 
-By default, traffic can be routed to all the upstream services, even if they are unhealthy. 
-To prevent picking a bad one, you can enable the `health-check` configuration provided by the Load Balancer Client from Spring Cloud
+By default, traffic is routed to upstream services, even if they are unhealthy. 
+To prevent picking a bad one, you can enable the `health-check` configuration provided by the Load Balancer Client from Spring Cloud:
 
 ```yaml
     spring:
@@ -65,7 +63,7 @@ You can also customize some options like `spring.cloud.loadbalancer.health-check
 
 For more options, explore the [LoadBalancerClientsProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java) and [LoadBalancerProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java) classes
 
-> Note: There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. This post describes the opposite, so we are declaring routes that are load balanced, including active health check
+> Note: There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. This post describes the opposite, so we are declaring routes that are load balanced, including active health check.
 
 # 2. Registering endpoints for your services
 
@@ -74,14 +72,14 @@ We are visiting some approaches in the following sections.
 
 ## Static approach
 
-You can statically activate client load balancing by configuring the `spring.cloud.discovery.client.simple.instances` property. 
+You can statically activate client load balancing by configuring the `spring.cloud.discovery.client.simple.instances` property.
 It is a map whose key is the service name (used by the lb:// URI) and the value is an array of `org.springframework.cloud.client.ServiceInstance` objects that point to the upstream services.
 
 Some benefits of static load balancing include:
 * Load balancing could distribute traffic between multiple instances, sharing any stress of the services and reducing the probability of crashing.
 * Fault tolerance.
 
-The problem is that you are setting statically the upstream services in your configuration. If you need to change the list, you need to restart your application.
+The problem is that you are statically setting the upstream services in your configuration. If you need to change the list, you need to restart your application.
 
 Example:
 ```yaml
@@ -198,9 +196,9 @@ curl localhost:8881/hello
 
 ## Eureka integration (+complex, dynamic)
 
-Having a static configuration is not so flexible, and Eureka as a service discovery server removes that drawback.
+Having a static configuration is not very flexible, but using Eureka as a service discovery can remove that drawback.
 
-The cost is that you require a new component in your architecture increasing maintenance. This could be not an option for some clients.
+The cost is that you require a new component in your architecture which can increase your maintenance burden. This might not be an option for some clients.
 
 The following example configures Eureka integration:
 
@@ -276,8 +274,8 @@ curl localhost:8881/hello
 curl localhost:8090/status/false -X PUT
 ```
 
-You should see in the Eureka dashboard that there is only one instance available, and, you will see some logs messages complaining that service on port 8090 is not available. 
-The health check is not immediate, so you could need to wait a few seconds to see the instance marked as DOWN.
+You should see in the Eureka dashboard that there is only one instance available, and you will see some logs messages complaining that service on port `8090` is not available.
+The health check is not immediate, so you might need to wait a few seconds to see the instance marked as DOWN.
 
 ## Custom Filter at Route level (dynamic approach)
 
@@ -285,7 +283,7 @@ As you have seen, Spring Cloud Gateway offers an option for creating your own cu
 
 In this section, you can see a custom filter implementation that sets up load balancing and health checks of your services by using Spring Cloud Gateway route configuration.
 
-If you already have a service discovery server in your project, maybe this is not the best option for you. If not, though, this is a simple and cheap way to get two great features in your project.
+If you already have a service discovery server in your project this might not be your best option. If not, this is a simple and cheap way to integrate two great features in your project.
 
 ```yaml
     spring:
@@ -305,6 +303,7 @@ If you already have a service discovery server in your project, maybe this is no
                 - StripPrefix=1
                 - LoadBalancer=localhost:8090;localhost:8091;localhost:8092
 ```
+
 The new `LoadBalancer` route filter lets you configure the upstream service endpoints associated with the `lb://hello-service` load balancer URI:
 
 ```

@@ -34,8 +34,8 @@ public class ServiceController {
 	 * Hello world endpoint.
 	 */
 	@GetMapping("/hello")
-	public String headers() {
-		return "{ \"message\": \"hello world from port %s!\"}".formatted(port);
+	public HelloDto hello() {
+		return new HelloDto("hello world from port %s!".formatted(port));
 	}
 
 	/**
@@ -62,4 +62,6 @@ public class ServiceController {
 	public List<String> services() {
 		return this.discoveryClient.getServices();
 	}
+
+	public record HelloDto(String message) {}
 }
