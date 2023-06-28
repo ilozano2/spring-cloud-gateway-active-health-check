@@ -59,11 +59,11 @@ To prevent picking a bad one, you can enable the `health-check` configuration pr
 All the endpoints will be checked periodically by automatically using the Spring Boot Actuator health endpoint. 
 You can also customize some options like `spring.cloud.loadbalancer.health-check.<your-service-name>.path` and `spring.cloud.loadbalancer.health-check.interval`.
 
-> Note: The default Health Check configuration checks the upstream service endpoints by using the `/actuator/health` endpoint, which requires activating Spring Actuator in your upstream service.
+> The default Health Check configuration checks the upstream service endpoints by using the `/actuator/health` endpoint, which requires activating Spring Actuator in your upstream service.
 
 For more options, explore the [LoadBalancerClientsProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java) and [LoadBalancerProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java) classes
 
-> Note: There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. This post describes the opposite, so we are declaring routes that are load balanced, including active health check.
+> There is a built-in feature in Spring Cloud Gateway that will deploy all the services available as routes. This post describes the opposite, so we are declaring routes that are load balanced, including active health check.
 
 # 2. Registering endpoints for your services
 
@@ -126,14 +126,20 @@ SERVER_PORT=8091 ./gradlew :service:bootRun
 ```shell
 curl http://localhost:8090/actuator/health
 ```
-> {"status":"UP"}
+
+```
+ {"status":"UP"}
+```
 
 3. Test http://localhost:8080/hello responds 200 OK
 
 ```shell
 curl localhost:8090/hello
 ```
-> { "message": "hello world!"}%
+
+```
+{ "message": "hello world!"}%
+```
 
 4. Run Spring Cloud Gateway
 
@@ -146,11 +152,18 @@ curl localhost:8090/hello
 ```shell
 curl localhost:8881/hello
 ```
-> { "message": "hello world from port 8090!"}%
+
+```
+{ "message": "hello world from port 8090!"}%
+```
+
 ```shell
 curl localhost:8881/hello
 ```
-> { "message": "hello world from port 8091!"}%
+
+```
+{ "message": "hello world from port 8091!"}%
+```
 
 You could need to run multiple times the previous commands to get a response from a different server.
 
@@ -165,7 +178,10 @@ curl localhost:8090/status/false -X PUT
 ```shell
 curl http://localhost:8090/actuator/health
 ```
-> {"status":"DOWN"}
+
+```
+{"status":"DOWN"}
+```
 
 8. Run multiple times a GET request to http://localhost:8881/hello and see that you only get response from port 8091
 
@@ -173,13 +189,19 @@ You could receive one response on port 8090 owing the healthcheck haven't checke
 The interval can be modified in the property spring.cloud.loadbalancer.health-check.interval `spring.cloud.loadbalancer.health-check.interval`
 
 Also, you can see some messages that describe one of the upstream endpoints as not healthy, and therefore, it is unavailable.
-> 2023-05-08 14:59:53.151 DEBUG 9906 --- [ctor-http-nio-3] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
-> HTTP/1.1 503 Service Unavailable
+
+```
+2023-05-08 14:59:53.151 DEBUG 9906 --- [ctor-http-nio-3] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
+HTTP/1.1 503 Service Unavailable
+```
 
 ```shell
 curl localhost:8881/hello
 ```
-> { "message": "hello world from port 8091!"}%
+
+```
+{ "message": "hello world from port 8091!"}%
+```
 
 9. Mark server 2 as unhealthy sending PUT request to http://localhost:8091/status/false
 
@@ -192,7 +214,10 @@ curl localhost:8091/status/false -X PUT
 ```shell
 curl localhost:8881/hello
 ```
-> {"timestamp":"2023-05-08T13:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
+
+```
+{"timestamp":"2023-05-08T13:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
+```
 
 11. Stop all the servers started in the previous steps
 
@@ -243,7 +268,9 @@ The following example configures Eureka integration:
 
 Wait until you can see Eureka server was started up
 
-> 2023-06-26 12:51:46.901  INFO 88601 --- [       Thread-9] e.s.EurekaServerInitializerConfiguration : Started Eureka Server
+```
+2023-06-26 12:51:46.901  INFO 88601 --- [       Thread-9] e.s.EurekaServerInitializerConfiguration : Started Eureka Server
+```
 
 2. Run servers including `eureka` profile
 ```shell
@@ -257,8 +284,10 @@ SPRING_PROFILES_ACTIVE=eureka SERVER_PORT=8091 ./gradlew :service:bootRun
 
 You should see that the sever instances were added into Eureka in the servers' logs from step 1.
 
-> 2023-06-26 12:52:50.805  INFO 88601 --- [nio-8761-exec-3] c.n.e.registry.AbstractInstanceRegistry  : Registered instance HELLO-SERVICE/192.168.0.14:hello-service:8090 with status UP (replication=true)
-> 2023-06-26 12:53:29.127  INFO 88601 --- [nio-8761-exec-9] c.n.e.registry.AbstractInstanceRegistry  : Registered instance HELLO-SERVICE/192.168.0.14:hello-service:8091 with status UP (replication=true)
+```
+2023-06-26 12:52:50.805  INFO 88601 --- [nio-8761-exec-3] c.n.e.registry.AbstractInstanceRegistry  : Registered instance HELLO-SERVICE/192.168.0.14:hello-service:8090 with status UP (replication=true)
+2023-06-26 12:53:29.127  INFO 88601 --- [nio-8761-exec-9] c.n.e.registry.AbstractInstanceRegistry  : Registered instance HELLO-SERVICE/192.168.0.14:hello-service:8091 with status UP (replication=true)
+```
 
 3. Go to http://localhost:8761/ and check the servers are included  as instance of the application `hello-service`
 
@@ -273,11 +302,18 @@ SERVER_PORT=8883 ./gradlew :3-eureka-service-disc:bootRun
 ```shell
 curl localhost:8883/hello
 ```
-> { "message": "hello world from port 8090!"}%
+
+```
+{ "message": "hello world from port 8090!"}%
+```
+
 ```shell
 curl localhost:8883/hello
 ```
-> { "message": "hello world from port 8091!"}%
+
+```
+{ "message": "hello world from port 8091!"}%
+```
 
 6. Mark server 1 as unhealthy sending PUT request to http://localhost:8090/status/false
 
@@ -361,14 +397,20 @@ SERVER_PORT=8091 ./gradlew :service:bootRun
 ```shell
 curl http://localhost:8090/actuator/health
 ```
-> {"status":"UP"}
+
+```
+{"status":"UP"}
+```
 
 3. Test http://localhost:8080/hello responds 200 OK
 
 ```shell
 curl localhost:8090/hello
 ```
-> { "message": "hello world!"}%
+
+```
+{ "message": "hello world!"}%
+```
 
 4. Run Spring Cloud Gateway
 
@@ -381,11 +423,18 @@ SERVER_PORT=8882 ./gradlew :2-custom-service-disc:bootRun
 ```shell
 curl localhost:8882/hello
 ```
-> { "message": "hello world from port 8090!"}%
+
+```
+{ "message": "hello world from port 8090!"}%
+```
+
 ```shell
 curl localhost:8882/hello
 ```
-> { "message": "hello world from port 8091!"}%
+
+```
+{ "message": "hello world from port 8091!"}%
+```
 
 You could need to run multiple times the previous commands to get a response from a different server.
 
@@ -400,7 +449,10 @@ curl localhost:8090/status/false -X PUT
 ```shell
 curl http://localhost:8090/actuator/health
 ```
-> {"status":"DOWN"}
+
+```
+{"status":"DOWN"}
+```
 
 8. Run multiple times a GET request to http://localhost:8881/hello and see that you only gets responds from port 8091
 
@@ -409,13 +461,18 @@ The interval can be modified in the `spring.cloud.loadbalancer.health-check.inte
 
 Also, you can see some messages that describe one of the upstream endpoints as not healthy, and, therefore, it is unavailable.
 
-> 2023-05-08 15:59:53.151 DEBUG 9906 --- [ctor-http-nio-2] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
-> HTTP/1.1 503 Service Unavailable
+```
+2023-05-08 15:59:53.151 DEBUG 9906 --- [ctor-http-nio-2] r.n.http.client.HttpClientOperations     : [12d42e83-77, L:/127.0.0.1:57439 - R:localhost/127.0.0.1:8090] Received response (auto-read:false) : RESPONSE(decodeResult: success, version: HTTP/1.1)
+HTTP/1.1 503 Service Unavailable
+```
 
 ```shell
 curl localhost:8882/hello
 ```
-> { "message": "hello world from port 8091!"}%
+
+```
+{ "message": "hello world from port 8091!"}%
+```
 
 9. Mark server 2 as unhealthy sending PUT request to http://localhost:8091/status/false
 
@@ -428,7 +485,10 @@ curl localhost:8091/status/false -X PUT
 ```shell
 curl localhost:8882/hello
 ```
-> {"timestamp":"2023-05-08T14:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
+
+```
+{"timestamp":"2023-05-08T14:07:48.704+00:00","path":"/hello","status":503,"error":"Service Unavailable","requestId":"6b5d6010-199"}%
+```
 
 11. Stop all the servers started in the previous steps
 
