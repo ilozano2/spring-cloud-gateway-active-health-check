@@ -4,6 +4,11 @@ Nowadays, services are compounded by other upstream services. This accelerates d
 
 If you run microservices, you want to prevent your upstream services from being called when they are not working properly, even if they are using a circuit breaker pattern. It can also generate a penalty in the response time. For this reason, it is important to actively check your upstream services to verify they are responding.
 
+>Health Check is a way to determine if a service can respond correctly according to its status, preventing timeouts and errors.
+>
+> **Passive Health Check** is done during request handling. If the service is finally unhealthy, SCG will return a failure marking the endpoint unhealthy. It can add extra latency.
+> **Active Health Check** will check and drop unhealthy services in the background before receiving the request. It doesn't add extra latency.
+
 Last but not least, these features can be combined with a circuit breaker library to immediately fall back on an alternative endpoint without suffering the first miss penalty.
 
 The goal is for routes to forward the requests to upstream services that are healthy by using a load balancer strategy:
