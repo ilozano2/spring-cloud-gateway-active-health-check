@@ -1,28 +1,28 @@
-# Active Health Check strategies with Spring Cloud Gateway
+# Active health check strategies with Spring Cloud Gateway
 
-Nowadays, services are compounded by other upstream services. This accelerates development and allows modules to be focused on specific responsibilities, increasing their quality. This is one of the main advantages of using a microservice approach. However, jumping from one service to another can add extra latency, and this latency can be dramatically higher when the services are not responding.
+Nowadays, services are built as a collection of small independent upstream services. This accelerates development and allows modules to be focused on specific responsibilities, increasing their quality. This is one of the main advantages of using a microservice approach. However, jumping from one service to another can add extra latency, and this latency can be dramatically higher when the services are not responding.
 
 If you run microservices, you want to prevent your upstream services from being called when they are not working properly, even if they are using a circuit breaker pattern. It can also generate a penalty in the response time. For this reason, it is important to actively check your upstream services to verify they are responding.
 
->Health Check is a way to determine if a service can respond correctly according to its status, preventing timeouts and errors.
+>A health check is a way to determine if a service can respond correctly according to its status, preventing timeouts and errors.
 >
-> **Passive Health Check** is done during request handling. If the service is finally unhealthy, SCG will return a failure marking the endpoint unhealthy. It can add extra latency.
+> **Passive health check** is done during request handling. If the service is finally unhealthy, SCG will return a failure marking the endpoint unhealthy. It can add extra latency.
 >
-> **Active Health Check** will check and drop unhealthy services in the background before receiving the request. It doesn't add extra latency.
+> **Active health check** will check and drop unhealthy services in the background before receiving the request. It doesn't add extra latency.
 
 Last but not least, these features can be combined with a circuit breaker library to immediately fall back on an alternative endpoint without suffering the first miss penalty.
 
 The goal is for routes to forward the requests to upstream services that are healthy by using a load balancer strategy:
 
-![Active Health Check Diagram](active-hc-diagram.png)
+![Active health check Diagram](active-hc-diagram.png)
 
 This post is divided into two parts:
-1. "Spring features you need" - describing which Spring’s features you need to get Active Health Check.
+1. "Spring features you need" - describing which Spring’s features you need to get active health check.
 2. "Registering endpoints for your services" - visiting some approaches for adding one or more endpoints to your routes.
 
 # 1. Spring features you need
 
-There are some features in Spring that can help you to get Active Health Check
+There are some features in Spring that can help you to get active health check
 
 * **Spring Cloud Load Balancer** (SLB) is a client-side load-balancer that allows balancing traffic between different upstream service endpoints. It is part of [Spring Cloud project](https://spring.io/projects/spring-cloud), and is included in the spring-cloud-commons library (see the [SLB documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#spring-cloud-loadbalancer)).
 * The client-side service discovery feature lets the client find and communicate with services without hard-coding the hostname and port. It is also included in the spring-cloud-commons library (see the [Service Discovery documentation](https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#discovery-client)).
@@ -51,7 +51,7 @@ The load balancer filter, [ReactiveLoadBalancerClientFilter](https://cloud.sprin
 
 Take into account that you need to register "your-service-name" in the Service Discovery registry. We will see different ways you can do it in the following sections.
 
-### Active Health Check
+### Active health check
 
 By default, traffic is routed to upstream services, even if they are unhealthy. 
 To prevent picking a bad one, you can enable the `health-check` configuration provided by the Load Balancer Client from Spring Cloud:
@@ -65,7 +65,7 @@ To prevent picking a bad one, you can enable the `health-check` configuration pr
 All the endpoints will be checked periodically by automatically using the Spring Boot Actuator health endpoint. 
 You can also customize some options like `spring.cloud.loadbalancer.health-check.<your-service-name>.path` and `spring.cloud.loadbalancer.health-check.interval`.
 
-> The default Health Check configuration checks the upstream service endpoints by using the `/actuator/health` endpoint, which requires activating Spring Actuator in your upstream service.
+> The default health check configuration checks the upstream service endpoints by using the `/actuator/health` endpoint, which requires activating Spring Actuator in your upstream service.
 
 For more options, explore the [LoadBalancerClientsProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerClientsProperties.java) and [LoadBalancerProperties](https://github.com/spring-cloud/spring-cloud-commons/blob/main/spring-cloud-commons/src/main/java/org/springframework/cloud/client/loadbalancer/LoadBalancerProperties.java) classes
 
@@ -97,7 +97,7 @@ spring:
           predicates:
             - Path=/hello
     loadbalancer:
-      configurations: health-check # Required for enabling SDC with Health Checks
+      configurations: health-check # Required for enabling SDC with health checks
     discovery:
       client:
         simple: # SimpleDiscoveryClient to configure statically services
@@ -241,7 +241,7 @@ The following example configures Eureka integration:
         name: scg-client-with-eureka
       cloud:
         loadbalancer:
-          configurations: health-check # Note: required for enabling SDC with Health Checks - remove this line if you want to reproduce issues because not using HealthChecks in LB
+          configurations: health-check # Note: required for enabling SDC with health checks - remove this line if you want to reproduce issues because not using health checks in LB
           # Note: LoadBalancerCacheProperties.ttl (or spring.cloud.loadbalancer.cache.ttl) is 35 by default - You will need to wait 35secs after an instance turns healthy
         gateway:
           httpclient:
@@ -346,7 +346,7 @@ If you already have a service discovery server in your project this might not be
         name: custom-service-disc
       cloud:
         loadbalancer:
-          configurations: health-check # Note: required for enabling SDC with Health Checks - remove this line if you want to reproduce issues because not using HealthChecks in LB
+          configurations: health-check # Note: required for enabling SDC with health checks - remove this line if you want to reproduce issues because not using health checks in LB
           # Note: LoadBalancerCacheProperties.ttl (or spring.cloud.loadbalancer.cache.ttl) is 35 by default - You will need to wait 35secs after an instance turns healthy
         gateway:
           routes:
@@ -509,5 +509,5 @@ To sum up, you have also seen that the Spring Cloud Gateway approach is a great 
 # Additional Resources
 
 Want to learn more about Spring Cloud? Join us virtually at [Spring Academy](https://spring.academy)! 
-Want to get **Active Health Check** just by adding a property in your route without getting your hands dirty? 
+Want to get **active health check** just by adding a property in your route without getting your hands dirty? 
 Take a look at our [commercial platform with Kubernetes](https://docs.vmware.com/en/VMware-Spring-Cloud-Gateway-for-Kubernetes/index.html) support.
